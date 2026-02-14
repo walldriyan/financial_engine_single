@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 🚀 Microservice: Financial Engine
+  engine:
+    build: .
+    container_name: financial_engine_core
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://engine:password@db:5432/financial_db
+      - REDIS_URL=redis://redis:6379
+      - RUST_LOG=info
+      - STORAGE_MODE=hybrid
+      - DB_POOL_SIZE=20
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  # 🐘 Database: PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: financial_engine_db
+    environment:
+      - POSTGRES_USER=engine
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=financial_db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  # ⚡ Cache: Redis
+  redis:
+    image: redis:alpine
+    container_name: financial_engine_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+volumes:
+  pg_data:
+  redis_data:
