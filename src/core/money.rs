@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::ops::{Add, Sub, Mul, Div};
-use std::cmp::Ordering;
 use crate::core::errors::EngineError;
+use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::fmt;
+use std::ops::{Add, Div, Mul, Sub};
 
 /// ============================================================================
 /// 💰 Money - මුදල් ව්‍යුහය
@@ -10,7 +10,7 @@ use crate::core::errors::EngineError;
 /// මෙය පද්ධතියේ ඇති වැදගත්ම දත්ත ව්‍යුහයයි.
 /// මූල්‍ය අගයන් ගබඩා කිරීම සඳහා අපි 'float' භාවිතා නොකරමු.
 /// ඒ වෙනුවට, අපි කුඩාම ඒකකය (සත - cents) ලෙස 'i64' භාවිතා කරමු.
-/// උදාහරණයක් ලෙස: 
+/// උදාහරණයක් ලෙස:
 /// රු. 10.50 => 1050 (සත)
 /// මෙය ගණිතමය දෝෂ (floating point errors) සම්පූර්ණයෙන්ම ඉවත් කරයි.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -74,9 +74,9 @@ impl Money {
     /// ඉතිරිය (remainder) අවසාන කොටසට එකතු වේ.
     pub fn split(&self, parts: i64) -> Result<Vec<Money>, EngineError> {
         if parts <= 0 {
-            return Err(EngineError::Calculation{
+            return Err(EngineError::Calculation {
                 code: "INVALID_SPLIT".to_string(),
-                message: "කොටස් ගණන 0 ට වැඩි විය යුතුය".to_string()
+                message: "කොටස් ගණන 0 ට වැඩි විය යුතුය".to_string(),
             });
         }
 
@@ -121,6 +121,13 @@ impl Money {
     /// 📊 ප්‍රතිශතයක් ගණනය කිරීම (Calculate percentage)
     pub fn percentage_of(&self, percentage: f64) -> Self {
         let val = (self.amount as f64 * (percentage / 100.0)).round() as i64;
+        Money { amount: val }
+    }
+
+    /// ✖️ අනුපාතයකින් ගුණ කරන්න (Multiply by ratio)
+    /// Ex: Total * (2.0 / 5.0)
+    pub fn mul_ratio(&self, ratio: f64) -> Self {
+        let val = (self.amount as f64 * ratio).round() as i64;
         Money { amount: val }
     }
 }
@@ -207,7 +214,7 @@ mod tests {
     #[test]
     fn test_addition() {
         let a = Money::new(10, 50); // Rs. 10.50
-        let b = Money::new(5, 75);  // Rs. 5.75
+        let b = Money::new(5, 75); // Rs. 5.75
         let sum = a + b;
         assert_eq!(sum.amount, 1625); // Rs. 16.25
     }
