@@ -1,3 +1,2 @@
 pub mod logger;
-// pub mod snapshot;
-// pub mod checksum;
+pub mod sentry; // Added Sentry integration
