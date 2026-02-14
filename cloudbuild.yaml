@@ -22,13 +22,14 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       
-      # Environment Variables Only (No Hardware Bindings)
+      # 🔌 Database Connection (Supabase Pooler - 6543)
       - '--set-env-vars'
       - 'STORAGE_MODE=sql_only'
       - '--set-env-vars'
       - 'DB_POOL_SIZE=10'
-      # Note: DATABASE_URL is managed via Cloud Console / Secret Manager now.
-      # This prevents overriding your live DB connection on every build.
+      - '--set-env-vars'
+      # Using Transaction Pooler (Port 6543) for Cloud Run stability
+      - 'DATABASE_URL=postgres://postgres.cuvgzqpvivyvvymbzqyt:4%40Walldriyanschlumin@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true'
 
 images:
   - 'gcr.io/$PROJECT_ID/financial-engine'
