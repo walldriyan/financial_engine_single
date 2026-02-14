@@ -1,34 +1,40 @@
-name: 🚀 Deploy to Google Cloud Run
+name: 🚀 Deploy to Google Cloud Run (walldriyan)
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "financial_engine/**"
+      - ".github/workflows/deploy.yml"
+      - "cloudbuild.yaml"
 
 env:
-  PROJECT_ID: my-financial-engine-project # TODO: ඔබේ Project ID එක මෙතනට දාන්න (හෝ Secrets පාවිච්චි කරන්න)
-  REGION: asia-south1 # Mumbai (Lankaවට ළඟම)
-  SERVICE_NAME: financial-engine
+  PROJECT_ID: walldriyan-r-finance-engine # Screenshot එකෙන් ගත්ත Project ID
+  REGION: asia-south1
+  SERVICE_NAME: walldriyan-r-financeeal-engine # Service Name (Spelling 'financeeal')
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write' # For Workload Identity Federation (Preferred for enterprise)
 
     steps:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Google Cloud වෙත Log වෙන්න (Github Secrets ඕනෙ)
+      # 🔐 Auth Note: ඔබට 'GCP_SA_KEY' Secret එක GitHub Repo එකට එකතු කළ යුතුය.
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      # 2. Cloud SDK පිහිටුවන්න
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+      - name: '☁️ Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
 
-      # 3. Docker Build & Push & Deploy (Cloud Build භාවිතා කර)
-      - name: '🚀 Build and Deploy'
+      # 🔥 Build & Deploy using cloudbuild.yaml trigger logic
+      - name: '🚀 Build and Deploy via Cloud Build'
         run: |
           gcloud builds submit --config cloudbuild.yaml .

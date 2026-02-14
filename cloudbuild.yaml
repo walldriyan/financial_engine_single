@@ -1,30 +1,33 @@
 steps:
   # 1. Build the Docker image
+  # සිංහල: ඩොකර් ඉමේජ් එක බිල්ඩ් කිරීම
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/financial-engine', '.']
 
   # 2. Push the image to Google Container Registry
+  # සිංහල: ඉමේජ් එක Google ගබඩාවට යැවීම
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/financial-engine']
 
-  # 3. Deploy to Cloud Run (The Magic Step)
+  # 3. Deploy to Cloud Run
+  # සිංහල: ක්ලවුඩ් රන් වෙත ඩිප්ලෝයි කිරීම
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'deploy'
-      - 'financial-engine'
+      - 'walldriyan-r-financeeal-engine' # Service Name from Screenshot
       - '--image'
       - 'gcr.io/$PROJECT_ID/financial-engine'
       - '--region'
-      - 'asia-south1' # Mumbai (Low Latency for Sri Lanka)
+      - 'asia-south1' # Mumbai
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated' # Or secure it with IAM
+      - '--allow-unauthenticated' # Public Access
       - '--set-env-vars'
       - 'STORAGE_MODE=hybrid'
-      - '--set-env-vars'
-      - 'DB_POOL_SIZE=10'
+      # පහත Env Vars පසුව Secret Manager හරහා දැමීම ආරක්ෂිතයි
+      #- 'DATABASE_URL=postgres://user:pass@...' 
 
 images:
   - 'gcr.io/$PROJECT_ID/financial-engine'
