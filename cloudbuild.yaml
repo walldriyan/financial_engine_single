@@ -1,13 +1,13 @@
 steps:
-  # 1. Build the Docker image
+  # 1. Build Docker Image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/financial-engine', '.']
 
-  # 2. Push the image to Google Container Registry
+  # 2. Push Image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/financial-engine']
 
-  # 3. Deploy to Cloud Run (With Cloud SQL Connection)
+  # 3. Deploy to Cloud Run (Generic Postgres Support)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -22,21 +22,13 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       
-      # 🔌 Database Connection (Cloud SQL)
-      - '--add-cloudsql-instances'
-      - 'walldriyan-r-finance-engine:asia-south1:financial-db-prod' # This matches the setup_db.sh instance
-
-      # ⚙️ Environment Variables
+      # Environment Variables Only (No Hardware Bindings)
       - '--set-env-vars'
-      - 'STORAGE_MODE=sql_only' # Use ONLY Postgres for production
+      - 'STORAGE_MODE=sql_only'
       - '--set-env-vars'
       - 'DB_POOL_SIZE=10'
-      
-      # ⚠️ IMPORTANT: Replace PASSWORD below with the one from setup_db.sh output manually, 
-      # OR use Secret Manager (Recommended for Enterprise).
-      # For now, we will use a placeholder that you must update in Cloud Console or build trigger.
-      - '--set-env-vars'
-      - 'DATABASE_URL=postgres://financial_user:PASSWORD_HERE@/financial_db?host=/cloudsql/walldriyan-r-finance-engine:asia-south1:financial-db-prod'
+      # Note: DATABASE_URL is managed via Cloud Console / Secret Manager now.
+      # This prevents overriding your live DB connection on every build.
 
 images:
   - 'gcr.io/$PROJECT_ID/financial-engine'
