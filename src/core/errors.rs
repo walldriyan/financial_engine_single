@@ -16,7 +16,7 @@ pub enum EngineError {
 
     #[error("පද්ධති දෝෂයකි: {message}")]
     System { message: String },
-    
+
     #[error("ආරක්ෂක දෝෂයකි: {code} - {message}")]
     Security { code: String, message: String },
 
@@ -43,6 +43,9 @@ pub enum EngineError {
 
     #[error("බාහිර සේවා දෝෂයකි: {service} - {message}")]
     ExternalService { service: String, message: String },
+
+    #[error("දත්ත සමුදා දෝෂයකි: {message}")]
+    Database { message: String },
 }
 
 pub type EngineResult<T> = Result<T, EngineError>;
