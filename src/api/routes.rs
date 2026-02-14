@@ -1,15 +1,15 @@
 use crate::refund::processor::RefundProcessor;
-use crate::refund::types::{RefundRequest, RefundResult};
+use crate::refund::types::RefundRequest;
 use crate::rules::mixed_scenarios::{CartCalculation, MixedScenarioEngine};
 use crate::types::cart::Cart;
 use axum::{
     extract::{Json, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     routing::post,
     Json as AxumJson, Router,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 
 /// ============================================================================
