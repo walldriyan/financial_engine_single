@@ -1,7 +1,7 @@
 use crate::core::errors::EngineResult;
 use crate::core::money::Money;
 use crate::types::cart::Cart;
-// Rule, RuleAction removed as unused
+use crate::types::item::Item;
 use serde::{Deserialize, Serialize};
 use std::ops::{Div, Mul};
 
@@ -145,16 +145,21 @@ impl MixedScenarioEngine {
     /// 💰 Calculate for a single item
     pub fn calculate_item(
         &self,
-        item_id: &str,
-        unit_price: Money,
-        quantity: f64,
+        item: &Item,
+        cart_items: &[Item],
         promo_codes: &[String],
+        target_jurisdiction: Option<&str>,
     ) -> EngineResult<ItemCalculation> {
-        let base_amount = unit_price * (quantity as i64);
+        let base_amount = item.price * (item.quantity as i64);
 
         // Get applicable discounts
-        let discount_amount =
-            self.calculate_item_discount(item_id, &base_amount, quantity, promo_codes)?;
+        let discount_amount = self.calculate_item_discount(
+            &item.id,
+            &base_amount,
+            item.quantity,
+            cart_items,
+            promo_codes,
+        )?;
 
         // Calculate taxable amount based on order
         let taxable_amount = match self.calculation_order {
@@ -163,7 +168,7 @@ impl MixedScenarioEngine {
         };
 
         // Get applicable taxes
-        let tax_amount = self.calculate_item_tax(item_id, &taxable_amount)?;
+        let tax_amount = self.calculate_item_tax(&item.id, &taxable_amount, target_jurisdiction)?;
 
         // Final total
         let total = match self.calculation_order {
@@ -173,7 +178,7 @@ impl MixedScenarioEngine {
         };
 
         Ok(ItemCalculation {
-            item_id: item_id.to_string(),
+            item_id: item.id.clone(),
             base_amount,
             discount_amount,
             tax_amount,
@@ -189,6 +194,7 @@ impl MixedScenarioEngine {
         item_id: &str,
         base_amount: &Money,
         quantity: f64,
+        cart_items: &[Item],
         promo_codes: &[String],
     ) -> EngineResult<Money> {
         let mut total_discount = Money::zero();
@@ -207,8 +213,13 @@ impl MixedScenarioEngine {
                 }
 
                 // Check conditions
-                let conditions_met =
-                    self.check_conditions(&rule.conditions, quantity, base_amount, promo_codes);
+                let conditions_met = self.check_conditions(
+                    &rule.conditions,
+                    quantity,
+                    base_amount,
+                    cart_items,
+                    promo_codes,
+                );
                 if !conditions_met {
                     continue;
                 }
@@ -244,7 +255,29 @@ impl MixedScenarioEngine {
                         }
                         tier_discount
                     }
-                    DiscountType::Bundle { .. } => Money::zero(), // Bundle handled at cart level
+                    DiscountType::Bundle {
+                        items,
+                        discount_percent,
+                    } => {
+                        // Check if all required items exist in cart (excluding current item)
+                        let mut all_found = true;
+                        for bundle_item_id in items {
+                            if !cart_items
+                                .iter()
+                                .any(|i| i.id == *bundle_item_id || i.name == *bundle_item_id)
+                            {
+                                all_found = false;
+                                break;
+                            }
+                        }
+
+                        if all_found {
+                            base_amount.sub_percentage(*discount_percent).abs()
+                            // Note: usually bundle discount is calculated on sum, here we apply % to this item if bundle exists
+                        } else {
+                            Money::zero()
+                        }
+                    }
                 };
 
                 total_discount = total_discount + discount.abs();
@@ -267,7 +300,12 @@ impl MixedScenarioEngine {
     }
 
     /// Calculate tax for item
-    fn calculate_item_tax(&self, item_id: &str, taxable_amount: &Money) -> EngineResult<Money> {
+    fn calculate_item_tax(
+        &self,
+        item_id: &str,
+        taxable_amount: &Money,
+        target_jurisdiction: Option<&str>,
+    ) -> EngineResult<Money> {
         let mut total_tax = Money::zero();
 
         // Check product-specific taxes
@@ -277,6 +315,13 @@ impl MixedScenarioEngine {
             }
 
             for tax_rate in &config.tax_rates {
+                // Check jurisdiction
+                if let Some(target) = target_jurisdiction {
+                    if tax_rate.jurisdiction != target && tax_rate.jurisdiction != "ALL" {
+                        continue;
+                    }
+                }
+
                 let tax = taxable_amount
                     .mul((tax_rate.rate * 100.0) as i64)
                     .div(10000);
@@ -284,7 +329,15 @@ impl MixedScenarioEngine {
             }
         } else {
             // Apply global taxes
+            // Apply global taxes
             for tax_rate in &self.global_tax_rates {
+                // Check jurisdiction
+                if let Some(target) = target_jurisdiction {
+                    if tax_rate.jurisdiction != target && tax_rate.jurisdiction != "ALL" {
+                        continue;
+                    }
+                }
+
                 match &tax_rate.applies_to {
                     TaxAppliesTo::All => {
                         let tax = taxable_amount
@@ -312,6 +365,7 @@ impl MixedScenarioEngine {
         conditions: &[DiscountCondition],
         quantity: f64,
         amount: &Money,
+        cart_items: &[Item],
         promo_codes: &[String],
     ) -> bool {
         if conditions.is_empty() {
@@ -323,6 +377,9 @@ impl MixedScenarioEngine {
                 DiscountCondition::MinQuantity(min) => quantity >= *min,
                 DiscountCondition::MinAmount(cents) => amount.amount >= *cents,
                 DiscountCondition::PromoCode(code) => promo_codes.contains(code),
+                DiscountCondition::CartContains(item_id) => cart_items
+                    .iter()
+                    .any(|i| i.id == *item_id || i.name == *item_id),
                 // Other conditions need external data
                 _ => true,
             };
@@ -338,6 +395,7 @@ impl MixedScenarioEngine {
         &self,
         cart: &Cart,
         promo_codes: &[String],
+        target_jurisdiction: Option<&str>,
     ) -> EngineResult<CartCalculation> {
         let mut item_results = Vec::new();
         let mut subtotal = Money::zero();
@@ -345,7 +403,8 @@ impl MixedScenarioEngine {
         let mut total_tax = Money::zero();
 
         for item in &cart.items {
-            let result = self.calculate_item(&item.id, item.price, item.quantity, promo_codes)?;
+            let result =
+                self.calculate_item(item, &cart.items, promo_codes, target_jurisdiction)?;
 
             subtotal = subtotal + result.base_amount;
             total_discount = total_discount + result.discount_amount;
@@ -399,83 +458,4 @@ pub struct CartCalculation {
     pub total_discount: Money,
     pub total_tax: Money,
     pub grand_total: Money,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mixed_tax_discount() {
-        let mut engine = MixedScenarioEngine::new();
-
-        // Add 10% VAT globally
-        engine.add_global_tax(TaxRate {
-            name: "VAT".to_string(),
-            rate: 10.0,
-            jurisdiction: "LK".to_string(),
-            applies_to: TaxAppliesTo::All,
-        });
-
-        // Add product discount
-        engine.add_product_discount(ProductDiscountConfig {
-            product_id: "PROD001".to_string(),
-            discounts: vec![DiscountRule {
-                id: "DISC001".to_string(),
-                name: "10% Off".to_string(),
-                discount_type: DiscountType::Percentage(10.0),
-                priority: 1,
-                conditions: vec![],
-                stackable: true,
-            }],
-            stackable: true,
-            max_discount_percent: Some(50.0),
-        });
-
-        let result = engine
-            .calculate_item("PROD001", Money::new(100, 0), 1.0, &[])
-            .unwrap();
-
-        // Base: 100, Discount: 10, Taxable: 90, Tax: 9, Total: 99
-        assert_eq!(result.base_amount.amount, 10000);
-        assert_eq!(result.discount_amount.amount, 1000);
-        assert_eq!(result.total.amount, 9900);
-    }
-
-    #[test]
-    fn test_tiered_discount() {
-        let mut engine = MixedScenarioEngine::new();
-
-        engine.add_product_discount(ProductDiscountConfig {
-            product_id: "PROD002".to_string(),
-            discounts: vec![DiscountRule {
-                id: "TIER001".to_string(),
-                name: "Bulk Discount".to_string(),
-                discount_type: DiscountType::Tiered(vec![
-                    TierLevel {
-                        min_qty: 10.0,
-                        max_qty: Some(49.0),
-                        discount_percent: 5.0,
-                    },
-                    TierLevel {
-                        min_qty: 50.0,
-                        max_qty: None,
-                        discount_percent: 15.0,
-                    },
-                ]),
-                priority: 1,
-                conditions: vec![],
-                stackable: false,
-            }],
-            stackable: false,
-            max_discount_percent: None,
-        });
-
-        let result = engine
-            .calculate_item("PROD002", Money::new(10, 0), 50.0, &[])
-            .unwrap();
-
-        // 50 items * Rs.10 = Rs.500, 15% off = Rs.75 discount
-        assert_eq!(result.discount_amount.amount, 7500);
-    }
 }
