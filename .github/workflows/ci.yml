@@ -1,0 +1,31 @@
+name: 🧪 CI - Code Quality Check (No Deploy)
+
+# මෙම Workflow එක ක්‍රියාත්මක වෙන්නේ 'main' නොවන අනෙකුත් branches සඳහා පමණි.
+# මෙයින් Deploy වීමක් සිදු නොවේ. කේතය නිවැරදි දැයි පරීක්ෂා කිරීම පමණක් සිදු කරයි.
+
+on:
+  push:
+    branches-ignore:
+      - main  # Main branch එක අතහරින්න (ඒක deploy.yml එකෙන් බලාගනී)
+  pull_request:
+
+jobs:
+  check-quality:
+    name: 🔍 Check & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 📦 Cache Dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: ✅ Run Syntax Check
+        run: cargo check --verbose
+
+      - name: 🧪 Run Unit Tests
+        run: cargo test --verbose

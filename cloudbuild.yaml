@@ -1,0 +1,30 @@
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/financial-engine', '.']
+
+  # 2. Push the image to Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/financial-engine']
+
+  # 3. Deploy to Cloud Run (The Magic Step)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'financial-engine'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/financial-engine'
+      - '--region'
+      - 'asia-south1' # Mumbai (Low Latency for Sri Lanka)
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated' # Or secure it with IAM
+      - '--set-env-vars'
+      - 'STORAGE_MODE=hybrid'
+      - '--set-env-vars'
+      - 'DB_POOL_SIZE=10'
+
+images:
+  - 'gcr.io/$PROJECT_ID/financial-engine'
