@@ -237,7 +237,7 @@ impl MixedScenarioEngine {
                     } => {
                         let sets = (quantity / (*buy + *get)).floor();
                         let free_items = sets * get;
-                        let unit_price = base_amount.div(quantity as i64);
+                        let unit_price = (*base_amount).div(quantity as i64);
                         let discount_per_free = unit_price
                             .mul((*free_percent / 100.0 * 100.0) as i64)
                             .div(100);
@@ -289,7 +289,7 @@ impl MixedScenarioEngine {
 
             // Apply max discount cap
             if let Some(max_pct) = config.max_discount_percent {
-                let max_discount = base_amount.mul((max_pct * 100.0) as i64).div(10000);
+                let max_discount = (*base_amount).mul((max_pct * 100.0) as i64).div(10000);
                 if total_discount > max_discount {
                     total_discount = max_discount;
                 }
@@ -322,7 +322,7 @@ impl MixedScenarioEngine {
                     }
                 }
 
-                let tax = taxable_amount
+                let tax = (*taxable_amount)
                     .mul((tax_rate.rate * 100.0) as i64)
                     .div(10000);
                 total_tax = total_tax + tax;
@@ -340,13 +340,13 @@ impl MixedScenarioEngine {
 
                 match &tax_rate.applies_to {
                     TaxAppliesTo::All => {
-                        let tax = taxable_amount
+                        let tax = (*taxable_amount)
                             .mul((tax_rate.rate * 100.0) as i64)
                             .div(10000);
                         total_tax = total_tax + tax;
                     }
                     TaxAppliesTo::Product(pid) if pid == item_id => {
-                        let tax = taxable_amount
+                        let tax = (*taxable_amount)
                             .mul((tax_rate.rate * 100.0) as i64)
                             .div(10000);
                         total_tax = total_tax + tax;
