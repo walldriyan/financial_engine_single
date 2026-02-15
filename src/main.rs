@@ -1,9 +1,8 @@
-use axum::{middleware, Router};
+use axum::middleware;
 use financial_engine::api::routes::create_router;
 use financial_engine::security::gateway::secure_guard;
 use std::net::SocketAddr;
 use std::time::Duration;
-use tower::ServiceBuilder;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
