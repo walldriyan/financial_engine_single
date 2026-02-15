@@ -1,43 +1,40 @@
+pub mod accounts; // ණය ගැති/ණය හිමි කළමනාකරණය
+pub mod advanced_payments; // චෙක්පත් සහ කොටස් වශයෙන් ගෙවීම් (Split payments)
+pub mod api; // පිටත පද්ධති සමඟ සම්බන්ධ වන දොරටුව (REST API)
+pub mod audit; // පද්ධතියේ සිදුවන දෑ නිරීක්ෂණය සහ වාර්තා කිරීම (Sentry/Logging)
 /// ============================================================================
-/// 💰 MUDAL GANANA ENGINE - Ultimate Financial Calculation Engine
+/// 💰 MUDAL GANANA ENGINE - මූල්‍ය ගණනය කිරීම් එන්ජිම
 /// ============================================================================
-/// Banking-grade, enterprise-ready financial engine for:
-/// - E-commerce (Amazon, eBay grade)
-/// - Banking & Financial Services
-/// - POS Systems
-/// - Subscription Billing
-/// - Multi-currency, Multi-tax, Multi-discount scenarios
-/// 
-/// 🛡️ Security: OWASP compliant, PCI-DSS ready
-/// 📊 Accuracy: No floating point errors (integer cents)
+/// මෙම එන්ජිම බැංකු මට්ටමේ ආරක්ෂාවක් සහ නිරවද්‍යතාවයක් සහිතව පහත දේ සඳහා නිපදවා ඇත:
+/// - ඊ-කොමර්ස් (E-commerce) පද්ධති
+/// - බැංකු සහ මූල්‍ය සේවා
+/// - විකුණුම් පර්යන්ත (POS Systems)
+/// - දායකත්ව බිල්පත් (Subscription Billing)
+///
+/// 🛡️ ආරක්ෂාව: OWASP ප්‍රමිතීන්ට අනුකූල වේ.
+/// 📊 නිරවද්‍යතාවය: දශම ලක්ෂ්‍ය දෝෂ මගහැරීම සඳහා පූර්ණ සංඛ්‍යා (Cents) භාවිතා කරයි.
 /// 🔌 Pluggable: Custom rules, taxes, discounts
 /// 🌐 API: REST, GraphQL, FFI (Flutter/iOS/WASM)
 /// 💾 Storage: Any SQL/NoSQL database
-
-pub mod core;
-pub mod types;
-pub mod rules;
-pub mod refund;
-pub mod audit;
-pub mod tax;
-pub mod discount;
-pub mod state;
-pub mod security;
-pub mod plugins;
-pub mod storage;
-pub mod api;
-pub mod ledger;
-pub mod accounts; // Centralized Creditor/Debtor Management
-pub mod advanced_payments; // POS Split Payments & Cheques
-pub mod inventory;
+// --- පද්ධතියේ ප්‍රධාන කොටස් (Modules) ---
+pub mod core; // මූලික ගණනය කිරීම් සහ මුදල් හැසිරවීම (Money handling)
+pub mod discount; // වට්ටම් (Discount) ගණනය කිරීම්
+pub mod inventory; // තොග කළමනාකරණය
+pub mod ledger; // මූල්‍ය ලෙජරය (Ledger) - සියලුම ගණුදෙනු සටහන් කිරීම
+pub mod plugins; // අමතර එකතු කළ හැකි පහසුකම් (Extension support)
+pub mod refund; // මුදල් ආපසු ගෙවීමේ (Refund) ක්‍රියාවලිය
+pub mod rules; // ව්‍යාපාරික නීති (Business Rules) - උදා: දීමනා කොන්දේසි
+pub mod security; // ආරක්ෂක පද්ධතිය (Authentication/Authorization)
+pub mod state; // පද්ධතියේ තත්ත්වය (State) පාලනය කිරීම
+pub mod storage; // දත්ත ගබඩා කිරීමේ පද්ධතිය (DB, Redis, Config)
 pub mod subscription;
+pub mod tax; // බදු (Tax) ගණනය කිරීම්
+pub mod types; // පද්ධතිය පුරා භාවිතා වන පොදු දත්ත වර්ග // මාසික/වාර්ෂික ගෙවීම් කළමනාකරණය
 
-// Re-exports for convenience
-pub use core::money::Money;
-pub use core::errors::{EngineError, EngineResult};
-pub use core::calculation::{CalculationEngine, CalculationResult};
+// පහසුව සඳහා නැවත අපනයනය කරන ලද කොටස් (Re-exports)
 pub use api::facade::FinancialEngine;
-pub use security::guard::IronGuard;
+pub use core::calculation::{CalculationEngine, CalculationResult};
+pub use core::errors::{EngineError, EngineResult};
+pub use core::money::Money;
 pub use rules::traits::{Rule, RuleAction};
-// Ready for Financial Transactions
-// pub type MudalGananaEngine = FinancialEngine; (Removed)
+pub use security::guard::IronGuard;
