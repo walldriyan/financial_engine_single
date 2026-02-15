@@ -32,16 +32,13 @@ impl BillingEngine {
         }
 
         if active_days >= total_days_in_cycle {
-            return plan.price.clone();
+            return plan.price;
         }
 
         // Formula: (Price / Total Days) * Active Days
         // Money doesn't support float multiplication directly usually, so we convert.
         // Assuming Money internal is BigInt or similar.
         // Simplified Logic:
-        let _price_per_day = plan.price.clone().div(total_days_in_cycle); // Integer division might lose precision!
-                                                                          // Ideally: (Price * Active Days) / Total Days
-
-        plan.price.clone().mul(active_days).div(total_days_in_cycle)
+        plan.price.mul(active_days).div(total_days_in_cycle)
     }
 }

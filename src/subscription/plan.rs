@@ -5,13 +5,15 @@ use serde::{Deserialize, Serialize};
 /// 📅 Subscription Plan (දායකත්ව සැලැස්ම)
 /// ============================================================================
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum BillingCycle {
     Monthly,
     Quarterly,
     Yearly,
     /// විශේෂ කාල පරාසයක් (දින ගණන)
-    Custom { days: i64 },
+    Custom {
+        days: i64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
