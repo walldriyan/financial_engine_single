@@ -6,7 +6,7 @@ use axum::{
     extract::{Json, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::post,
+    routing::{get, post},
     Json as AxumJson, Router,
 };
 use serde::Deserialize;
@@ -74,6 +74,11 @@ async fn refund_handler(
     }
 }
 
+/// 🏥 Health Check
+async fn health_check() -> &'static str {
+    "Financial Engine is Running! 🚀"
+}
+
 /// 🛠️ Setup Routes (Router සාදන්න)
 pub fn create_router() -> Router {
     // Initialize Engine & Services
@@ -86,6 +91,7 @@ pub fn create_router() -> Router {
     };
 
     Router::new()
+        .route("/", get(health_check))
         .route("/api/v1/calculate", post(calculate_handler))
         .route("/api/v1/refund", post(refund_handler))
         .with_state(state)
