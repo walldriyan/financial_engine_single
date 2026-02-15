@@ -30,8 +30,9 @@ COPY --from=builder /app/target/release/financial-engine /app/financial-engine
 
 # Copy config files if any (e.g. .env is loaded via env vars usually)
 
-# Expose port
-EXPOSE 3000
+# Expose port (Cloud Run defaults to 8080)
+ENV PORT=8080
+EXPOSE 8080
 
 # Run the binary
 CMD ["./financial-engine"]
